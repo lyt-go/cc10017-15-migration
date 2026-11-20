@@ -67,6 +67,26 @@ npm run dev
 | 下沉分发 | `sink_dispatch` | 分发规则 | 规则编号、湖表名、目标系统 |
 | 数据生命周期 | `ttl_policy` | 生命周期 | 策略编号、目标表名、热数据保留 |
 | 实时指标 | `realtime_metrics` | 指标定义 | 指标编号、指标名称、聚合窗口 |
+| Iceberg元数据迁移 | `metadata_migration`（接口）/ 嵌入 Iceberg管理、湖上分区两页 | 元数据迁移清单 | 清单编号、数据版本、冲突收口路线、兼容读取入口 |
+
+### Iceberg 元数据迁移清单
+
+订单表等湖表的旧版元数据把分区规格与排序字段压在同一版本文本里，历史快照只能按当时
+文本解释。迁移清单（artifact 表 `iceberg_metadata_migration_manifests` /
+`iceberg_metadata_migration_items` / `iceberg_metadata_rollback_batches`）把分区规格拆成
+独立清单，并保证：
+
+- 旧元数据文本与新分区规格在迁移项中双向对应（含 `reverse_mapping` 回程指针）；
+- 每个迁移项保留旧快照读取路径，并生成可执行的回滚批次；
+- 中断后 `resume` 只处理状态非「已完成」的迁移项，重复恢复幂等；
+- 冲突收口支持 `legacy_first` / `spec_first` 两条路线，切换会形成新数据版本，
+  清单始终只声明一个兼容读取入口；快照回放的扫描结果与旧版本一致；
+- Iceberg 管理页负责生成/恢复/回滚/收口，湖上分区页只读同一版本并校验新分区规格，
+  两入口通过 `shared` 接口拿到一致结果；空态返回空列表，异常与超时返回可恢复提示。
+
+接口前缀 `/api/metadata_migration`：`GET/POST /manifests`、
+`POST /manifests/{id}/resume|rebase|replay|verify|rollback`、
+`GET /manifests/{id}/shared`。
 
 ## 约定
 

@@ -449,6 +449,17 @@ const dagModules = modules.filter(m => m.shape === 'dag-graph')
 const timelineModules = modules.filter(m => m.shape === 'job-timeline')
 const analysisModules = modules.filter(m => m.shape === 'analysis-dashboard')
 
+// 部分 CRUD 模块在创建时有跨模块注册校验，通用假数据会被后端拒绝，
+// 这里按字段给出合法覆盖值，保证登记链路能真正落库。
+const createValueOverrides: Record<string, Record<string, string>> = {
+  stream_quality: {
+    // 监控主题必须是已注册主题；告警阈值给高值，避免“标记生效”触发质量检查
+    // 而向死信表写入副作用数据，影响后续死信模块的初始行数断言
+    监控主题: 'TOPI-0001',
+    告警阈值: '9999',
+  },
+}
+
 function parseCsv(text: string): string[][] {
   const records: string[][] = []
   let row: string[] = []
@@ -499,7 +510,8 @@ test('CRUD模块：筛选、导出、登记、动作、指标全链路', async (
     const download = await downloadPromise
     expect(download.suggestedFilename()).toBe(`${mod.key}.csv`)
 
-    const createdValues = mod.fields.map((f, i) => `验收-${mod.key}-${i+1}`)
+    const createdValues = mod.fields.map((f, i) =>
+      createValueOverrides[mod.key]?.[f] ?? `验收-${mod.key}-${i+1}`)
     await page.getByTestId('open-create').click()
     await expect(page.getByTestId('create-modal')).toBeVisible()
     for (const [i, field] of mod.fields.entries()) {

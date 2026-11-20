@@ -76,6 +76,8 @@
       <span>共 {{ total }} 条湖上分区记录</span>
       <span v-if="errorMessage" class="error-text">{{ errorMessage }}</span>
     </footer>
+
+    <MigrationPanel mode="partition" />
   </section>
 </template>
 
@@ -83,6 +85,7 @@
 import { computed, onMounted, ref } from 'vue'
 
 import { request } from '@/api/client'
+import MigrationPanel from '@/components/MigrationPanel.vue'
 
 type Row = Record<string, string | number | null>
 

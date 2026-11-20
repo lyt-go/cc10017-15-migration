@@ -586,6 +586,9 @@ class PipelineEngine:
             "compact_results": len(store.rows("compact_results")),
             "ttl_applied_log": len(store.rows("ttl_applied_log")),
             "realtime_metric_results": len(store.rows("realtime_metric_results")),
+            "iceberg_metadata_migration_manifests": len(store.rows("iceberg_metadata_migration_manifests")),
+            "iceberg_metadata_migration_items": len(store.rows("iceberg_metadata_migration_items")),
+            "iceberg_metadata_rollback_batches": len(store.rows("iceberg_metadata_rollback_batches")),
         }
 
         return {
